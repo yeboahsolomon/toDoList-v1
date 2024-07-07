@@ -20,48 +20,23 @@ const itemsSchema = {
 
 const Item = mongoose.model("Item", itemsSchema);
 
-const item1 = new Item ({
-  name: "Welcome to your todolist!"
-})
-
-const item2 = new Item ({
-  name: "Hit the + button to add a new item."
-})
-
-const item3 = new Item ({
-  name: "<-- Hit this to delete an item."
-})
-
-const defaultItems = [item1, item2, item3];
-
-const listsSchema = {
-   name: String,
-   items: [itemsSchema]
-}
-
-const List = mongoose.model("List", listsSchema);
+const dayName = new Date().toLocaleString('en-US', { weekday: 'long' });
  
 app.get("/", async function(req, res){
-
-  try {
-
     const foundItems = await Item.find({});
-
-    if (foundItems.length === 0) {
-
-      Item.insertMany(defaultItems);
-
-      res.redirect("/");
-
-    } else {
-      res.render("list", {listTitle: "Today", newListItems: foundItems});
-    }
-
-  } catch (error) {
-    console.log(error);
-    res.status(500).send("Server Error");
-  }
+    res.render("list", {listTitle: dayName + " ToDoList", newListItems: foundItems});
 });
+
+app.post("/", async function(req, res){
+  const itemName = req.body.newItem;
+  const item = new Item ({
+    name: itemName
+  });
+
+  item.save();
+  res.redirect("/");
+
+}); 
 
 app.post ("/delete", async function(req, res){
   const checkedItemId = req.body.checkedbox
@@ -70,39 +45,6 @@ app.post ("/delete", async function(req, res){
   res.redirect("/");
 });
 
-app.get("/:customListName", async function(req, res){
-
-  const customListName = req.params.customListName;
-
-  const list = new List ({
-    name: customListName,
-    items: defaultItems
-  });
-
-  if (await List.findOne({name: customListName}).exec() === null) {
-    list.save();
-    res.redirect("/" + customListName);
-
-  } else {
-    res.render("list", {listTitle: list.name, newListItems: list.items});
-  }
-});
-
-app.post("/", async function(req, res){
-
-  const itemName = req.body.newItem;
-  const listName = req.body.list;
-
-  const item = new Item ({
-    name: itemName
-  });
-
-  if (listName === "Today") {
-    item.save();
-    res.redirect("/");
-
-  } 
-});
 
 app.listen(3000, function(){
   console.log("Server started on port 3000")
